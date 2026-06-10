@@ -1,0 +1,6 @@
+# Representative hosts-file subset for tests and demos.
+0.0.0.0 graph.facebook.com
+0.0.0.0 connect.facebook.net
+0.0.0.0 api.segment.io
+0.0.0.0 telemetry.example.net
+0.0.0.0 ads.example.test

@@ -1,0 +1,13 @@
+.venv/
+node_modules/
+dist/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.py[cod]
+*.tsbuildinfo
+*.log
+vite.config.js
+vite.config.d.ts
+vitest.config.js
+vitest.config.d.ts

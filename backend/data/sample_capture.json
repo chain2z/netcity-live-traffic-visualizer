@@ -1,0 +1,16 @@
+[
+  {"ts": 1700000000.0, "srcIp": "192.168.1.12", "dstIp": "142.250.190.78", "protocol": "TCP", "port": 443, "bytes": 1280},
+  {"ts": 1700000000.2, "srcIp": "142.250.190.78", "dstIp": "192.168.1.12", "protocol": "TCP", "port": 443, "bytes": 2048},
+  {"ts": 1700000000.4, "srcIp": "192.168.1.22", "dstIp": "31.13.70.36", "protocol": "TCP", "port": 443, "bytes": 740},
+  {"ts": 1700000000.7, "srcIp": "192.168.1.22", "dstIp": "31.13.70.36", "protocol": "TCP", "port": 443, "bytes": 910},
+  {"ts": 1700000001.1, "srcIp": "192.168.1.35", "dstIp": "34.117.59.81", "protocol": "TCP", "port": 443, "bytes": 620},
+  {"ts": 1700000001.3, "srcIp": "192.168.1.35", "dstIp": "52.85.247.12", "protocol": "UDP", "port": 443, "bytes": 480},
+  {"ts": 1700000001.8, "srcIp": "192.168.1.12", "dstIp": "1.1.1.1", "protocol": "UDP", "port": 53, "bytes": 90},
+  {"ts": 1700000002.0, "srcIp": "1.1.1.1", "dstIp": "192.168.1.12", "protocol": "UDP", "port": 53, "bytes": 160},
+  {"ts": 1700000002.3, "srcIp": "192.168.1.48", "dstIp": "8.8.8.8", "protocol": "UDP", "port": 53, "bytes": 88},
+  {"ts": 1700000002.8, "srcIp": "192.168.1.48", "dstIp": "34.117.59.81", "protocol": "TCP", "port": 443, "bytes": 1320},
+  {"ts": 1700000003.2, "srcIp": "192.168.1.22", "dstIp": "192.168.1.1", "protocol": "ICMP", "port": null, "bytes": 64},
+  {"ts": 1700000003.5, "srcIp": "192.168.1.1", "dstIp": "192.168.1.22", "protocol": "ICMP", "port": null, "bytes": 64},
+  {"ts": 1700000003.9, "srcIp": "192.168.1.35", "dstIp": "31.13.70.36", "protocol": "TCP", "port": 443, "bytes": 860},
+  {"ts": 1700000004.4, "srcIp": "192.168.1.12", "dstIp": "52.85.247.12", "protocol": "TCP", "port": 443, "bytes": 540}
+]

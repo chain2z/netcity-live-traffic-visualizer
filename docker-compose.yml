@@ -1,0 +1,19 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+    network_mode: host
+    privileged: true
+    environment:
+      NETCITY_FORCE_MOCK: "0"
+  frontend:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: sh -c "corepack enable && pnpm install && pnpm dev --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_WS_URL: ws://localhost:8000/ws/stream
