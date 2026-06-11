@@ -7,6 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.runtime import Runtime
+from app.security import (
+    LocalOnlyAndOriginMiddleware,
+    close_disallowed_websocket,
+    configured_allowed_origins,
+    websocket_request_allowed,
+)
 from app.stream.ws import stream_city
 
 
@@ -22,9 +28,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="NetCity", lifespan=lifespan)
+app.add_middleware(LocalOnlyAndOriginMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=sorted(configured_allowed_origins()),
     allow_credentials=False,
     allow_methods=["GET"],
     allow_headers=["*"],
@@ -34,4 +41,7 @@ app.include_router(router)
 
 @app.websocket("/ws/stream")
 async def websocket_stream(websocket: WebSocket) -> None:
+    if not websocket_request_allowed(websocket):
+        await close_disallowed_websocket(websocket)
+        return
     await stream_city(websocket, websocket.app.state.runtime)

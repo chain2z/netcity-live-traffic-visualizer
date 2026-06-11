@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import "pixi.js/unsafe-eval";
 
 import App from "./App";
 import "./index.css";

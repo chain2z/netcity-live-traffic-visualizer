@@ -33,6 +33,18 @@ The Vite app expects the backend at `http://localhost:8000`.
 
 On Windows, run the backend from an Administrator terminal for live capture.
 
+## Security Model
+
+NetCity is a local-only tool and intentionally has no authentication. The backend binds to localhost in the documented run command, rejects non-loopback clients by default, and only accepts browser origins from the local Vite app. WebSocket origin checks matter because browser CORS does not protect WebSocket streams.
+
+To use a different local frontend origin, set:
+
+```bash
+NETCITY_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+`NETCITY_ALLOW_REMOTE=1` disables the loopback-only client check and should only be used on a trusted isolated network.
+
 ## Live vs Mock Data
 
 NetCity tries `LiveCaptureSource` first. Live capture uses Scapy and usually requires administrator/root privileges plus a working capture driver such as Npcap on Windows. If live capture cannot start, NetCity automatically switches to `MockReplaySource` and shows a persistent banner with the structured failure reason.
