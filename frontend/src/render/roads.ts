@@ -11,15 +11,35 @@ export interface RoadSegment {
 export function roadSegments(
   connections: Connection[],
   positions: Map<string, IsoPoint>,
+  deviceIdByIp: Map<string, string> = new Map(),
 ): RoadSegment[] {
-  return connections.flatMap((connection, index) => {
+  const grouped = new Map<string, Connection>();
+  for (const connection of connections) {
+    const key = `${connection.srcDeviceId}|${connection.dstIp}`;
+    const existing = grouped.get(key);
+    if (existing) {
+      grouped.set(key, {
+        ...existing,
+        id: key,
+        bytes: existing.bytes + connection.bytes,
+        packetCount: existing.packetCount + connection.packetCount,
+        lastSeen: Math.max(existing.lastSeen, connection.lastSeen),
+      });
+    } else {
+      grouped.set(key, { ...connection, id: key });
+    }
+  }
+
+  return [...grouped.values()].flatMap((connection, index) => {
     const from = positions.get(connection.srcDeviceId);
     if (!from) return [];
+    const dstDeviceId = deviceIdByIp.get(connection.dstIp);
+    const connectedDestination = dstDeviceId ? positions.get(dstDeviceId) : undefined;
     return [
       {
         id: connection.id,
         from,
-        to: destinationPoint(from, connection.dstIp, index),
+        to: connectedDestination ?? destinationPoint(from, connection.dstIp, index),
         bytes: connection.bytes,
       },
     ];
@@ -29,7 +49,7 @@ export function roadSegments(
 function destinationPoint(from: IsoPoint, dstIp: string, index: number): IsoPoint {
   const hash = [...dstIp].reduce((total, char) => total + char.charCodeAt(0), 0);
   const angle = ((hash % 360) * Math.PI) / 180;
-  const radius = 120 + (index % 4) * 34;
+  const radius = 260 + (index % 6) * 54;
   return {
     x: from.x + Math.cos(angle) * radius,
     y: from.y + Math.sin(angle) * radius * 0.54 + 26,

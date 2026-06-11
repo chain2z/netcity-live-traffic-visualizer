@@ -2,7 +2,13 @@ import { Application, Assets, Container, Graphics, Sprite, Text } from "pixi.js"
 
 import type { CityStoreSnapshot } from "../store/cityStore";
 import type { Device } from "../types/domain";
-import { buildingScale, buildingSpriteFor, layoutDevices, trustBadge } from "./buildings";
+import {
+  buildingScale,
+  buildingSpriteFor,
+  inferHostDeviceId,
+  layoutDevices,
+  trustBadge,
+} from "./buildings";
 import { PacketCarSystem } from "./cars";
 import { roadSegments } from "./roads";
 
@@ -28,7 +34,8 @@ export async function mountCityScene(
 
   const world = new Container();
   world.x = host.clientWidth / 2;
-  world.y = Math.max(220, host.clientHeight * 0.34);
+  world.y = host.clientHeight / 2 + 80;
+  world.scale.set(0.34);
   app.stage.addChild(world);
 
   const gridLayer = new Graphics();
@@ -43,13 +50,14 @@ export async function mountCityScene(
   const sprites = new Map<string, Sprite>();
   const labels = new Map<string, Text>();
   const badges = new Map<string, Text>();
-  let scale = 1;
+  const hostRings = new Map<string, Graphics>();
+  let scale = 0.34;
   let dragging = false;
   let lastPointer: { x: number; y: number } | null = null;
 
   host.addEventListener("wheel", (event) => {
     event.preventDefault();
-    scale = clamp(scale - event.deltaY * 0.001, 0.55, 1.9);
+    scale = clamp(scale - event.deltaY * 0.001, 0.2, 1.25);
     world.scale.set(scale);
   });
   host.addEventListener("pointerdown", (event) => {
@@ -83,8 +91,9 @@ export async function mountCityScene(
   async function renderSnapshot(snapshot: CityStoreSnapshot) {
     const devices = Object.values(snapshot.devices);
     const connections = Object.values(snapshot.connections);
-    const positions = layoutDevices(devices);
-    const segments = roadSegments(connections, positions);
+    const positions = layoutDevices(devices, connections);
+    const deviceIdByIp = new Map(devices.map((device) => [device.ip, device.id]));
+    const segments = roadSegments(connections, positions, deviceIdByIp);
 
     roadLayer.clear();
     destinationLayer.clear();
@@ -103,12 +112,15 @@ export async function mountCityScene(
         sprite.destroy();
         labels.get(id)?.destroy();
         badges.get(id)?.destroy();
+        hostRings.get(id)?.destroy();
         sprites.delete(id);
         labels.delete(id);
         badges.delete(id);
+        hostRings.delete(id);
       }
     }
 
+    const hostDeviceId = inferHostDeviceId(devices, connections);
     for (const device of devices) {
       const position = positions.get(device.id);
       if (!position) continue;
@@ -126,7 +138,7 @@ export async function mountCityScene(
 
         const label = new Text({
           text: device.ip,
-          style: { fill: "#d8f3f4", fontSize: 12, align: "center" },
+          style: { fill: "#d8f3f4", fontSize: 10, align: "center" },
         });
         label.anchor.set(0.5, 0);
         buildingLayer.addChild(label);
@@ -134,15 +146,27 @@ export async function mountCityScene(
 
         const badge = new Text({
           text: trustBadge(device),
-          style: { fill: "#071014", fontSize: 13, fontWeight: "700" },
+          style: { fill: "#071014", fontSize: 11, fontWeight: "700" },
         });
         badge.anchor.set(0.5);
         buildingLayer.addChild(badge);
         badges.set(device.id, badge);
+
+        const hostRing = new Graphics();
+        buildingLayer.addChild(hostRing);
+        hostRings.set(device.id, hostRing);
       } else {
         sprite.texture = texture;
       }
-      updateBuilding(sprite, labels.get(device.id), badges.get(device.id), device, position);
+      updateBuilding(
+        sprite,
+        labels.get(device.id),
+        badges.get(device.id),
+        hostRings.get(device.id),
+        device,
+        position,
+        device.id === hostDeviceId,
+      );
     }
   }
 
@@ -150,10 +174,12 @@ export async function mountCityScene(
     sprite: Sprite,
     label: Text | undefined,
     badge: Text | undefined,
+    hostRing: Graphics | undefined,
     device: Device,
     position: { x: number; y: number },
+    isHost: boolean,
   ) {
-    const size = buildingScale(device);
+    const size = buildingScale(device) * (isHost ? 1.18 : 1);
     sprite.x = position.x;
     sprite.y = position.y;
     sprite.scale.set(size);
@@ -161,27 +187,37 @@ export async function mountCityScene(
     if (label) {
       label.text = device.ip;
       label.x = position.x;
-      label.y = position.y + 8;
+      label.y = position.y + 10;
+      label.alpha = 0.82;
     }
     if (badge) {
       badge.text = trustBadge(device);
-      badge.x = position.x + 24;
-      badge.y = position.y - 80 * size;
+      badge.x = position.x + 16;
+      badge.y = position.y - 58 * size;
+    }
+    if (hostRing) {
+      hostRing.clear();
+      hostRing.visible = isHost;
+      if (isHost) {
+        hostRing
+          .circle(position.x, position.y - 42 * size, 64 * size)
+          .stroke({ width: 3, color: 0x5eead4, alpha: 0.85 });
+      }
     }
   }
 }
 
 function drawGrid(graphics: Graphics) {
   graphics.clear();
-  for (let row = -8; row <= 8; row += 1) {
-    graphics.moveTo(-900, row * 58).lineTo(900, row * 58).stroke({
+  for (let row = -14; row <= 24; row += 1) {
+    graphics.moveTo(-2200, row * 92).lineTo(3200, row * 92).stroke({
       width: 1,
       color: 0x31505a,
       alpha: 0.28,
     });
   }
-  for (let col = -8; col <= 8; col += 1) {
-    graphics.moveTo(col * 112, -520).lineTo(col * 112, 780).stroke({
+  for (let col = -18; col <= 24; col += 1) {
+    graphics.moveTo(col * 178, -720).lineTo(col * 178, 2200).stroke({
       width: 1,
       color: 0x31505a,
       alpha: 0.2,
