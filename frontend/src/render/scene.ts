@@ -8,6 +8,7 @@ import {
   inferHostDeviceId,
   layoutDevices,
   trustBadge,
+  visibleBuildingDevices,
 } from "./buildings";
 import { PacketCarSystem } from "./cars";
 import { roadSegments } from "./roads";
@@ -91,9 +92,11 @@ export async function mountCityScene(
   async function renderSnapshot(snapshot: CityStoreSnapshot) {
     const devices = Object.values(snapshot.devices);
     const connections = Object.values(snapshot.connections);
-    const positions = layoutDevices(devices, connections);
+    const buildingDevices = visibleBuildingDevices(devices, connections);
+    const positions = layoutDevices(buildingDevices, connections);
+    const devicesById = new Map(devices.map((device) => [device.id, device]));
     const deviceIdByIp = new Map(devices.map((device) => [device.ip, device.id]));
-    const segments = roadSegments(connections, positions, deviceIdByIp);
+    const segments = roadSegments(connections, positions, devicesById, deviceIdByIp);
 
     roadLayer.clear();
     destinationLayer.clear();
@@ -102,11 +105,13 @@ export async function mountCityScene(
         .moveTo(segment.from.x, segment.from.y)
         .lineTo(segment.to.x, segment.to.y)
         .stroke({ width: 2, color: 0x8bd3dd, alpha: 0.35 });
-      destinationLayer.circle(segment.to.x, segment.to.y, 5).fill({ color: 0xd8b4fe, alpha: 0.8 });
+      if (segment.endpoint === "external") {
+        destinationLayer.circle(segment.to.x, segment.to.y, 5).fill({ color: 0xd8b4fe, alpha: 0.8 });
+      }
     }
     cars.sync(segments);
 
-    const wanted = new Set(devices.map((device) => device.id));
+    const wanted = new Set(buildingDevices.map((device) => device.id));
     for (const [id, sprite] of sprites) {
       if (!wanted.has(id)) {
         sprite.destroy();
@@ -120,8 +125,8 @@ export async function mountCityScene(
       }
     }
 
-    const hostDeviceId = inferHostDeviceId(devices, connections);
-    for (const device of devices) {
+    const hostDeviceId = inferHostDeviceId(buildingDevices, connections);
+    for (const device of buildingDevices) {
       const position = positions.get(device.id);
       if (!position) continue;
       const spriteUrl = buildingSpriteFor(device);

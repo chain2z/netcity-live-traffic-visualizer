@@ -17,7 +17,7 @@ export function buildingSpriteFor(device: Device): string {
 
 export function buildingScale(device: Device): number {
   const total = device.bytesIn + device.bytesOut;
-  return Math.min(0.82, 0.36 + Math.log10(total + 10) / 8);
+  return Math.min(0.92, 0.42 + Math.log10(total + 10) / 7);
 }
 
 export function inferHostDeviceId(devices: Device[], connections: Connection[] = []): string | null {
@@ -60,6 +60,11 @@ export function layoutDevices(devices: Device[], connections: Connection[] = [])
   return positions;
 }
 
+export function visibleBuildingDevices(devices: Device[], connections: Connection[] = []): Device[] {
+  const hostId = inferHostDeviceId(devices, connections);
+  return devices.filter((device) => device.id === hostId || isPrivateIp(device.ip));
+}
+
 function ringSlot(index: number): { ring: number; indexInRing: number; ringCount: number } {
   let ring = 1;
   let ringCount = 10;
@@ -90,7 +95,7 @@ function inferHostDevice(devices: Device[], connections: Connection[]): Device |
   })[0];
 }
 
-function isPrivateIp(ip: string): boolean {
+export function isPrivateIp(ip: string): boolean {
   const parts = ip.split(".").map(Number);
   if (parts.length !== 4 || parts.some((part) => Number.isNaN(part))) return false;
   const [a, b] = parts;
